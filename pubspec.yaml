@@ -1,0 +1,4 @@
+name: oe_download
+dev_dependencies:
+  grinder: any
+  http: '>=0.11.0 <0.12.0'
