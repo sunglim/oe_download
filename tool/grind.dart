@@ -7,7 +7,7 @@ import 'package:html5lib/dom.dart' as dom;
 
 void main([List<String> args]) {
   task('set_m14tv', set_m14tv);
-
+  task('nike', nike);
   startGrinder(args);
 }
 
@@ -31,9 +31,35 @@ Future<String> _getLatestVersion(String chipName) {
   });
 }
 
-void _getTarUrl(String chipName, String version) {
-  //http://webos-ci.lge.com/download/starfish/starfish-beehive4tv-official-m14tv/121/m14tv/starfish-atsc-nfs/
-  /*<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+// chipname = {m14tv,h15,lm15u}
+// type = {atsc, dvb, arib}
+Future<String> _getTarUrl(String chipName, String version, String type) {
+  var url = "http://webos-ci.lge.com/download/starfish/starfish-beehive4tv-official-" + chipName + "/" + version + "/" + chipName + "/starfish-" + type + "-nfs/";
+  return http.get(url)
+      .then((response) {
+    dom.Document document = parse(response.body);
+      document.querySelectorAll('a').forEach((elem){
+        if (elem.attributes['href'].contains(new RegExp('tar.gz'))) {
+          return url + elem.attributes['href'];
+        }
+      });    
+  });
+}
+
+void set_m14tv(GrinderContext context) {
+  deleteEntity(getDir("m14tv"), context);
+  _getLatestVersion(Chips.M14.toString()).then((versionString) {
+    _getTarUrl(Chips.M14.toString(), versionString, 'atsc').then((epkurl) {
+      runProcess(context, 'wget', arguments: [epkurl]);
+    });
+  });
+}
+
+class OeType {
+}
+
+void nike(GrinderContext context) {
+  String text = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
   <html>
    <head>
     <title>Index of /download/starfish/starfish-beehive4tv-official-m14tv/121/m14tv/starfish-atsc-nfs</title>
@@ -54,15 +80,11 @@ void _getTarUrl(String chipName, String version) {
   <tr><th colspan="5"><hr></th></tr>
   </table>
   <address>Apache/2.2.22 (Ubuntu) Server at webos-ci.lge.com Port 80</address>
-  </body></html>
-*/
-  return http.get(url)  
+  </body></html>''';
+  dom.Document document = parse(text);
+  document.querySelectorAll('a').forEach((elem){
+    if (elem.attributes['href'].contains(new RegExp('tar.gz'))) {
+      print(elem.attributes['href']);
+    }
+  });
 }
-
-void set_m14tv(GrinderContext context) {
-  _getLatestVersion(Chips.M14.toString()).then(print);
-}
-
-class OeType {
-}
-
