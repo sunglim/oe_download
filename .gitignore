@@ -1,9 +1,10 @@
 # Don’t commit the following directories created by pub.
 build/
 .buildlog
+m14tv/
 packages/
-tool/packages/
 .pub/
+tool/packages/
 
 # Include when developing application packages.
 pubspec.lock

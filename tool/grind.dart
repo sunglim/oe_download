@@ -1,13 +1,18 @@
+// Sungguk Lim all rights reserved.
+
 import 'dart:async';
+import 'dart:io';
 
 import 'package:grinder/grinder.dart';
-import 'package:http/http.dart' as http;
-import 'package:html5lib/parser.dart' show parse;
+import 'package:grinder/grinder_files.dart';
+import 'package:grinder/grinder_tools.dart';
 import 'package:html5lib/dom.dart' as dom;
+import 'package:html5lib/parser.dart' show parse;
+import 'package:http/http.dart' as http;
 
 void main([List<String> args]) {
   task('set_m14tv', set_m14tv);
-  task('nike', nike);
+  
   startGrinder(args);
 }
 
@@ -21,70 +26,60 @@ class Chips {
   static const LM15U = const Chips._internal('lm15u');
 }
 
+String SNAPSHOT_URL = "http://webos-ci.lge.com/download/starfish/";
+
 // |chipName| should be one of Chips._
 Future<String> _getLatestVersion(String chipName) {
-  return http.get("http://webos-ci.lge.com/download/starfish/starfish-beehive4tv-official-" + chipName + "/")
+  return http.get(SNAPSHOT_URL + "starfish-beehive4tv-official-" + chipName + "/")
       .then((response) {
     dom.Document document = parse(response.body);     
     List<dom.Element> atags = document.querySelectorAll('a');
-    return atags.last.nodes.first.toString().replaceFirst(new RegExp(r'/'),'');
+    return atags.last.nodes.first.toString().replaceFirst(new RegExp(r'/'),'').replaceAll(new RegExp(r'"'), '');
   });
 }
 
-// chipname = {m14tv,h15,lm15u}
+// |chipName| should be one of Chips._
 // type = {atsc, dvb, arib}
 Future<String> _getTarUrl(String chipName, String version, String type) {
-  var url = "http://webos-ci.lge.com/download/starfish/starfish-beehive4tv-official-" + chipName + "/" + version + "/" + chipName + "/starfish-" + type + "-nfs/";
-  return http.get(url)
-      .then((response) {
+  var url = SNAPSHOT_URL + "starfish-beehive4tv-official-" + chipName + "/" + version + "/" + chipName + "/starfish-" + type + "-nfs/";
+  return http.get(url).then((response) {
     dom.Document document = parse(response.body);
-      document.querySelectorAll('a').forEach((elem){
-        if (elem.attributes['href'].contains(new RegExp('tar.gz'))) {
-          return url + elem.attributes['href'];
-        }
-      });    
+    var epkurl = "";
+    document.querySelectorAll('a').forEach((elem){
+      var href = elem.attributes['href']; 
+      if (href.contains(new RegExp('tar.gz')) && !href.contains(new RegExp('md5'))) {
+        epkurl = url + href;
+      }
+    });
+    return epkurl;
   });
 }
 
+void _runBashCommandSync(GrinderContext context, String command, {String cwd}) {
+  context.log(command);
+  ProcessResult result =
+    Process.runSync('/bin/bash', ['-c', command], workingDirectory: cwd);
+  if (result.stdout.isNotEmpty) {
+    context.log(result.stdout);
+  }
+  if (result.stderr.isNotEmpty) {
+    context.log(result.stderr);
+  }
+  if (result.exitCode > 0) {
+    context.fail("exit code ${result.exitCode}");
+  }
+}
+
+// Download tarball and extract to ./m14tv
 void set_m14tv(GrinderContext context) {
-  deleteEntity(getDir("m14tv"), context);
+  String DEPLOY_DIR = "m14tv";
+  deleteEntity(getDir(DEPLOY_DIR), context);
   _getLatestVersion(Chips.M14.toString()).then((versionString) {
     _getTarUrl(Chips.M14.toString(), versionString, 'atsc').then((epkurl) {
-      runProcess(context, 'wget', arguments: [epkurl]);
+      new Directory(DEPLOY_DIR).createSync(recursive: true);
+      runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: DEPLOY_DIR).then((_) {
+        _runBashCommandSync(context, 'tar xvf *', cwd: DEPLOY_DIR);
+      });
     });
-  });
-}
-
-class OeType {
-}
-
-void nike(GrinderContext context) {
-  String text = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-  <html>
-   <head>
-    <title>Index of /download/starfish/starfish-beehive4tv-official-m14tv/121/m14tv/starfish-atsc-nfs</title>
-   </head>
-   <body>
-  <h1>Index of /download/starfish/starfish-beehive4tv-official-m14tv/121/m14tv/starfish-atsc-nfs</h1>
-  <table><tr><th><img src="/icons/blank.gif" alt="[ICO]"></th><th><a href="?C=N;O=D">Name</a></th><th><a href="?C=M;O=A">Last modified</a></th><th><a href="?C=S;O=A">Size</a></th><th><a href="?C=D;O=A">Description</a></th></tr><tr><th colspan="5"><hr></th></tr>
-  <tr><td valign="top"><img src="/icons/back.gif" alt="[DIR]"></td><td><a href="/download/starfish/starfish-beehive4tv-official-m14tv/121/m14tv/">Parent Directory</a></td><td>&nbsp;</td><td align="right">  - </td><td>&nbsp;</td></tr>
-  <tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bom.txt">bom.txt</a></td><td align="right">06-Nov-2014 15:29  </td><td align="right">104K</td><td>&nbsp;</td></tr>
-  <tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="build-id.txt">build-id.txt</a></td><td align="right">06-Nov-2014 17:26  </td><td align="right">1.1K</td><td>&nbsp;</td></tr>
-  <tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="files-in-image.txt">files-in-image.txt</a></td><td align="right">06-Nov-2014 17:26  </td><td align="right">6.8M</td><td>&nbsp;</td></tr>
-  <tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="image-info.txt">image-info.txt</a></td><td align="right">06-Nov-2014 17:26  </td><td align="right">1.2K</td><td>&nbsp;</td></tr>
-  <tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="installed-package-file-sizes.txt">installed-package-file-sizes.txt</a></td><td align="right">06-Nov-2014 17:26  </td><td align="right"> 18K</td><td>&nbsp;</td></tr>
-  <tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="installed-package-sizes.txt">installed-package-sizes.txt</a></td><td align="right">06-Nov-2014 17:26  </td><td align="right"> 18K</td><td>&nbsp;</td></tr>
-  <tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="installed-packages.txt">installed-packages.txt</a></td><td align="right">06-Nov-2014 17:26  </td><td align="right"> 30K</td><td>&nbsp;</td></tr>
-  <tr><td valign="top"><img src="/icons/compressed.gif" alt="[   ]"></td><td><a href="starfish-atsc-nfs-m14tv-beehive4tv-121-02.01.21.rootfs.tar.gz">starfish-atsc-nfs-m14tv-beehive4tv-121-02.01.21.rootfs.tar.gz</a></td><td align="right">06-Nov-2014 17:17  </td><td align="right">647M</td><td>&nbsp;</td></tr>
-  <tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="starfish-atsc-nfs-m14tv-beehive4tv-121-02.01.21.rootfs.tar.gz.md5">starfish-atsc-nfs-m14tv-beehive4tv-121-02.01.21.rootfs.tar.gz.md5</a></td><td align="right">06-Nov-2014 17:26  </td><td align="right"> 96 </td><td>&nbsp;</td></tr>
-  <tr><th colspan="5"><hr></th></tr>
-  </table>
-  <address>Apache/2.2.22 (Ubuntu) Server at webos-ci.lge.com Port 80</address>
-  </body></html>''';
-  dom.Document document = parse(text);
-  document.querySelectorAll('a').forEach((elem){
-    if (elem.attributes['href'].contains(new RegExp('tar.gz'))) {
-      print(elem.attributes['href']);
-    }
   });
 }
