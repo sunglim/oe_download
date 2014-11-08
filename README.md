@@ -1,4 +1,5 @@
 oe_download
 ===========
 
-download latest oebuild
+For personal usage.
+Easy script to download binary from website(which is accesible only from my officie)
