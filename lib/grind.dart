@@ -80,6 +80,7 @@ Future set_m14tv_atsc(GrinderContext context) {
       new Directory(DEPLOY_DIR).createSync(recursive: true);
       return runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: DEPLOY_DIR).then((_) {
         _runBashCommandSync(context, 'tar xvf *', cwd: DEPLOY_DIR);
+        new File('tools/ex.sh').copySync('${DEPLOY_DIR}/ex.sh');
       });
     });
   });
@@ -94,6 +95,7 @@ Future set_m14tv_dvb(GrinderContext context) {
       new Directory(DEPLOY_DIR).createSync(recursive: true);
       return runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: DEPLOY_DIR).then((_) {
         _runBashCommandSync(context, 'tar xvf *', cwd: DEPLOY_DIR);
+        new File('tools/ex_dvb.sh').copySync('${DEPLOY_DIR}/ex.sh');
       });
     });
   });
