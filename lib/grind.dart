@@ -27,11 +27,11 @@ class Chips {
   static const LM15U = const Chips._internal('lm15u');
 }
 
-String SNAPSHOT_URL = "http://webos-ci.lge.com/download/starfish/";
+final String SNAPSHOT_URL = "http://webos-ci.lge.com/download/starfish/";
 
 // |chipName| should be one of Chips._
 Future<String> _getLatestVersion(String chipName) {
-  return http.get(SNAPSHOT_URL + "starfish-beehive4tv-official-" + chipName + "/")
+  return http.get("${SNAPSHOT_URL}starfish-beehive4tv-official-${chipName}/")
       .then((response) {
     dom.Document document = parse(response.body);     
     List<dom.Element> atags = document.querySelectorAll('a');
@@ -42,7 +42,7 @@ Future<String> _getLatestVersion(String chipName) {
 // |chipName| should be one of Chips._
 // type = {atsc, dvb, arib}
 Future<String> _getTarUrl(String chipName, String version, String type) {
-  var url = SNAPSHOT_URL + "starfish-beehive4tv-official-" + chipName + "/" + version + "/" + chipName + "/starfish-" + type + "-nfs/";
+  var url = "${SNAPSHOT_URL}starfish-beehive4tv-official-${chipName}/${version}/${chipName}/starfish-${type}-nfs/";
   return http.get(url).then((response) {
     dom.Document document = parse(response.body);
     var epkurl = "";
@@ -71,32 +71,28 @@ void _runBashCommandSync(GrinderContext context, String command, {String cwd}) {
   }
 }
 
+Future _deploy_latest_image(String deployDir, String chipName, String type, GrinderContext context) {
+  return _getLatestVersion(chipName).then((versionString) {
+    return _getTarUrl(chipName, versionString, type).then((epkurl) {
+      new Directory(deployDir).createSync(recursive: true);
+      return runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: deployDir).then((_) {
+        _runBashCommandSync(context, 'tar xvf *', cwd: deployDir);
+        new File('tools/${type}.sh').copySync('${deployDir}/ex.sh');
+      });
+    });
+  });
+}
+
 // Download atsc tarball and extract to ./m14tv
 Future set_m14tv_atsc(GrinderContext context) {
   final String DEPLOY_DIR = "m14tv_atsc";
   deleteEntity(getDir(DEPLOY_DIR), context);
-  return _getLatestVersion(Chips.M14.toString()).then((versionString) {
-    return _getTarUrl(Chips.M14.toString(), versionString, 'atsc').then((epkurl) {
-      new Directory(DEPLOY_DIR).createSync(recursive: true);
-      return runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: DEPLOY_DIR).then((_) {
-        _runBashCommandSync(context, 'tar xvf *', cwd: DEPLOY_DIR);
-        new File('tools/ex.sh').copySync('${DEPLOY_DIR}/ex.sh');
-      });
-    });
-  });
+  return _deploy_latest_image(DEPLOY_DIR, Chips.M14.toString(), 'atsc', context);
 }
 
 // Download dvb tarball and extract to ./m14tv
 Future set_m14tv_dvb(GrinderContext context) {
   final String DEPLOY_DIR = "m14tv_dvb";
   deleteEntity(getDir(DEPLOY_DIR), context);
-  return _getLatestVersion(Chips.M14.toString()).then((versionString) {
-    return _getTarUrl(Chips.M14.toString(), versionString, 'dvb').then((epkurl) {
-      new Directory(DEPLOY_DIR).createSync(recursive: true);
-      return runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: DEPLOY_DIR).then((_) {
-        _runBashCommandSync(context, 'tar xvf *', cwd: DEPLOY_DIR);
-        new File('tools/ex_dvb.sh').copySync('${DEPLOY_DIR}/ex.sh');
-      });
-    });
-  });
+  return _deploy_latest_image(DEPLOY_DIR, Chips.M14.toString(), 'dvb', context);
 }
