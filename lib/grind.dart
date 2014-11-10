@@ -71,13 +71,13 @@ void _runBashCommandSync(GrinderContext context, String command, {String cwd}) {
 }
 
 // Download tarball and extract to ./m14tv
-void set_m14tv(GrinderContext context) {
+Future set_m14tv(GrinderContext context) {
   String DEPLOY_DIR = "m14tv";
   deleteEntity(getDir(DEPLOY_DIR), context);
-  _getLatestVersion(Chips.M14.toString()).then((versionString) {
-    _getTarUrl(Chips.M14.toString(), versionString, 'atsc').then((epkurl) {
+  return _getLatestVersion(Chips.M14.toString()).then((versionString) {
+    return _getTarUrl(Chips.M14.toString(), versionString, 'atsc').then((epkurl) {
       new Directory(DEPLOY_DIR).createSync(recursive: true);
-      runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: DEPLOY_DIR).then((_) {
+      return runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: DEPLOY_DIR).then((_) {
         _runBashCommandSync(context, 'tar xvf *', cwd: DEPLOY_DIR);
       });
     });
