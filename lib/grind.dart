@@ -11,7 +11,8 @@ import 'package:html5lib/parser.dart' show parse;
 import 'package:http/http.dart' as http;
 
 void main([List<String> args]) {
-  task('set_m14tv', set_m14tv);
+  task('set_m14tv_atsc', set_m14tv_atsc);
+  task('set_m14tv_dvb', set_m14tv_dvb);
   
   startGrinder(args);
 }
@@ -70,12 +71,26 @@ void _runBashCommandSync(GrinderContext context, String command, {String cwd}) {
   }
 }
 
-// Download tarball and extract to ./m14tv
-Future set_m14tv(GrinderContext context) {
-  String DEPLOY_DIR = "m14tv";
+// Download atsc tarball and extract to ./m14tv
+Future set_m14tv_atsc(GrinderContext context) {
+  final String DEPLOY_DIR = "m14tv_atsc";
   deleteEntity(getDir(DEPLOY_DIR), context);
   return _getLatestVersion(Chips.M14.toString()).then((versionString) {
     return _getTarUrl(Chips.M14.toString(), versionString, 'atsc').then((epkurl) {
+      new Directory(DEPLOY_DIR).createSync(recursive: true);
+      return runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: DEPLOY_DIR).then((_) {
+        _runBashCommandSync(context, 'tar xvf *', cwd: DEPLOY_DIR);
+      });
+    });
+  });
+}
+
+// Download dvb tarball and extract to ./m14tv
+Future set_m14tv_dvb(GrinderContext context) {
+  final String DEPLOY_DIR = "m14tv_dvb";
+  deleteEntity(getDir(DEPLOY_DIR), context);
+  return _getLatestVersion(Chips.M14.toString()).then((versionString) {
+    return _getTarUrl(Chips.M14.toString(), versionString, 'dvb').then((epkurl) {
       new Directory(DEPLOY_DIR).createSync(recursive: true);
       return runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: DEPLOY_DIR).then((_) {
         _runBashCommandSync(context, 'tar xvf *', cwd: DEPLOY_DIR);

@@ -1,7 +1,8 @@
 .buildlog
 .pub/
 build/
-m14tv/
+m14tv_atsc/
+m14tv_dvb/
 packages/
 pubspec.lock
 lib/packages/
