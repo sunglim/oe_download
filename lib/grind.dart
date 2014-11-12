@@ -78,6 +78,7 @@ Future _deploy_latest_image(String deployDir, String chipName, String type, Grin
       return runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: deployDir).then((_) {
         _runBashCommandSync(context, 'tar xvf *', cwd: deployDir);
         new File('tools/${type}.sh').copySync('${deployDir}/ex.sh');
+        new File('tools/brow.sh').copySync('${deployDir}/brow.sh');
       });
     });
   });
