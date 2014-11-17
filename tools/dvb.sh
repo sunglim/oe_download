@@ -4,6 +4,8 @@
 echo "* COPY"
 rm hybridtv*.bz2;
 rm hybridtv-dvb -rf;
-cp /mnt/24server/hybridtv-dvb*.bz2 ./
+
+FILENAME=$(ls -lrt /mnt/24server/hybridtv-dvb*.bz2 | awk -F" " '{ print $9 }')
+cp $FILENAME ./
 tar xvf hybridtv*.bz2
 cp ./hybridtv-dvb/usr/lib/* ./usr/lib
