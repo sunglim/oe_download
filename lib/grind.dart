@@ -17,6 +17,8 @@ void main([List<String> args]) {
   task('set_h15_dvb', set_h15_dvb);
   task('set_lm15u_atsc', set_lm15u_atsc);
   task('set_lm15u_dvb', set_lm15u_dvb);
+
+  task('set_version', set_version);
   
   startGrinder(args);
 }
@@ -41,7 +43,8 @@ class BroadcastType {
   static const ARIB = const Chips._internal('arib');
 }
 
-final String SNAPSHOT_URL = "http://webos-ci.lge.com/download/starfish/";
+final String SNAPSHOT_URL = 'http://webos-ci.lge.com/download/starfish/';
+String _deploy_version = '';
 
 // |chipName| should be one of Chips._
 Future<String> _getLatestVersion(String chipName) {
@@ -87,6 +90,7 @@ void _runBashCommandSync(GrinderContext context, String command, {String cwd}) {
 
 Future _deploy_latest_image(String deployDir, String chipName, String type, GrinderContext context) {
   return _getLatestVersion(chipName).then((versionString) {
+    if (_deploy_version.isNotEmpty) versionString = _deploy_version;
     return _getTarUrl(chipName, versionString, type).then((epkurl) {
       new Directory(deployDir).createSync(recursive: true);
       return runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: deployDir).then((_) {
@@ -102,35 +106,46 @@ Future _deploy_latest_image(String deployDir, String chipName, String type, Grin
 Future set_m14tv_atsc(GrinderContext context) {
   final String DEPLOY_DIR = "m14tv_atsc";
   deleteEntity(getDir(DEPLOY_DIR), context);
-  return _deploy_latest_image(DEPLOY_DIR, Chips.M14.toString(), 'atsc', context);
+  return _deploy_latest_image(DEPLOY_DIR, Chips.M14.toString(),
+                              BroadcastType.ATSC.toString(), context);
 }
 
 Future set_m14tv_dvb(GrinderContext context) {
   final String DEPLOY_DIR = "m14tv_dvb";
   deleteEntity(getDir(DEPLOY_DIR), context);
-  return _deploy_latest_image(DEPLOY_DIR, Chips.M14.toString(), 'dvb', context);
+  return _deploy_latest_image(DEPLOY_DIR, Chips.M14.toString(),
+                              BroadcastType.DVB.toString(), context);
 }
 
 Future set_h15_atsc(GrinderContext context) {
   final String DEPLOY_DIR = "h15_atsc";
   deleteEntity(getDir(DEPLOY_DIR), context);
-  return _deploy_latest_image(DEPLOY_DIR, Chips.H15.toString(), 'atsc', context);
+  return _deploy_latest_image(DEPLOY_DIR, Chips.H15.toString(),
+                              BroadcastType.ATSC.toString(), context);
 }
 
 Future set_h15_dvb(GrinderContext context) {
   final String DEPLOY_DIR = "h15_dvb";
   deleteEntity(getDir(DEPLOY_DIR), context);
-  return _deploy_latest_image(DEPLOY_DIR, Chips.H15.toString(), 'dvb', context);
+  return _deploy_latest_image(DEPLOY_DIR, Chips.H15.toString(),
+                              BroadcastType.DVB.toString(), context);
 }
 
 Future set_lm15u_atsc(GrinderContext context) {
   final String DEPLOY_DIR = "lm15u_atsc";
   deleteEntity(getDir(DEPLOY_DIR), context);
-  return _deploy_latest_image(DEPLOY_DIR, Chips.LM15U.toString(), 'atsc', context);
+  return _deploy_latest_image(DEPLOY_DIR, Chips.LM15U.toString(),
+                              BroadcastType.ATSC.toString(), context);
 }
 
 Future set_lm15u_dvb(GrinderContext context) {
   final String DEPLOY_DIR = "lm15u_dvb";
   deleteEntity(getDir(DEPLOY_DIR), context);
-  return _deploy_latest_image(DEPLOY_DIR, Chips.LM15U.toString(), 'dvb', context);
+  return _deploy_latest_image(DEPLOY_DIR, Chips.LM15U.toString(),
+                              BroadcastType.DVB.toString(), context);
+}
+
+void set_version(GrinderContext context) {
+  print('Enter version : ');
+  _deploy_version = stdin.readLineSync().trim();
 }
