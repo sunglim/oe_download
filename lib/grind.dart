@@ -13,6 +13,10 @@ import 'package:http/http.dart' as http;
 void main([List<String> args]) {
   task('set_m14tv_atsc', set_m14tv_atsc);
   task('set_m14tv_dvb', set_m14tv_dvb);
+  task('set_h15_atsc', set_h15_atsc);
+  task('set_h15_dvb', set_h15_dvb);
+  task('set_lm15u_atsc', set_lm15u_atsc);
+  task('set_lm15u_dvb', set_lm15u_dvb);
   
   startGrinder(args);
 }
@@ -25,6 +29,16 @@ class Chips {
   static const M14 = const Chips._internal('m14tv');
   static const H15 = const Chips._internal('h15');
   static const LM15U = const Chips._internal('lm15u');
+}
+
+class BroadcastType {
+  final _value;
+  const BroadcastType._internal(this._value);
+  String toString() => '$_value';
+  
+  static const ATSC = const Chips._internal('atsc');
+  static const DVB = const Chips._internal('dvb');
+  static const ARIB = const Chips._internal('arib');
 }
 
 final String SNAPSHOT_URL = "http://webos-ci.lge.com/download/starfish/";
@@ -91,9 +105,32 @@ Future set_m14tv_atsc(GrinderContext context) {
   return _deploy_latest_image(DEPLOY_DIR, Chips.M14.toString(), 'atsc', context);
 }
 
-// Download dvb tarball and extract to ./m14tv
 Future set_m14tv_dvb(GrinderContext context) {
   final String DEPLOY_DIR = "m14tv_dvb";
   deleteEntity(getDir(DEPLOY_DIR), context);
   return _deploy_latest_image(DEPLOY_DIR, Chips.M14.toString(), 'dvb', context);
+}
+
+Future set_h15_atsc(GrinderContext context) {
+  final String DEPLOY_DIR = "h15_atsc";
+  deleteEntity(getDir(DEPLOY_DIR), context);
+  return _deploy_latest_image(DEPLOY_DIR, Chips.H15.toString(), 'atsc', context);
+}
+
+Future set_h15_dvb(GrinderContext context) {
+  final String DEPLOY_DIR = "h15_dvb";
+  deleteEntity(getDir(DEPLOY_DIR), context);
+  return _deploy_latest_image(DEPLOY_DIR, Chips.H15.toString(), 'dvb', context);
+}
+
+Future set_lm15u_atsc(GrinderContext context) {
+  final String DEPLOY_DIR = "lm15u_atsc";
+  deleteEntity(getDir(DEPLOY_DIR), context);
+  return _deploy_latest_image(DEPLOY_DIR, Chips.LM15U.toString(), 'atsc', context);
+}
+
+Future set_lm15u_dvb(GrinderContext context) {
+  final String DEPLOY_DIR = "lm15u_dvb";
+  deleteEntity(getDir(DEPLOY_DIR), context);
+  return _deploy_latest_image(DEPLOY_DIR, Chips.LM15U.toString(), 'dvb', context);
 }
