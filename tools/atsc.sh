@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#mount -t smbfs //156.147.69.51/work /mnt/51server -o username=sungguk.lim
+#mount -t smbfs //156.147.61.35/tftpboot /mnt/35server -o username=sungguk.lim
 echo "* COPY"
 rm hybridtv*.bz2;
 rm hybridtv-atsc -rf;
