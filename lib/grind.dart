@@ -95,7 +95,11 @@ Future _deploy_latest_image(String deployDir, String chipName, String type, Grin
       new Directory(deployDir).createSync(recursive: true);
       return runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: deployDir).then((_) {
         _runBashCommandSync(context, 'tar xvf *', cwd: deployDir);
-        new File('tools/${type}.sh').copySync('${deployDir}/ex.sh');
+        String source = new File('tools/deploy_hybridtv.sh').readAsStringSync();;
+        source = source.replaceFirst(new RegExp('{chip}'), chipName)
+                       .replaceAll(new RegExp('{type}'), type);
+        new File('${deployDir}/ex.sh').writeAsStringSync(source);
+        _runBashCommandSync(context, 'chmod 777 ex.sh', cwd: deployDir);
         new File('tools/brow.sh').copySync('${deployDir}/brow.sh');
       });
     });
