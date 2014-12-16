@@ -19,6 +19,8 @@ void main([List<String> args]) {
   task('set_lm15u_dvb', set_lm15u_dvb);
 
   task('set_version', set_version);
+
+  task('set_badland_atsc', set_badland_atsc);
   
   startGrinder(args);
 }
@@ -88,13 +90,20 @@ void _runBashCommandSync(GrinderContext context, String command, {String cwd}) {
   }
 }
 
-Future _deploy_latest_image(String deployDir, String chipName, String type, GrinderContext context) {
+// Create |deployDir|. and download |tarUri| and extract it.
+Future _deploy_tar(String deployDir, String tarUri, GrinderContext context) {
+  new Directory(deployDir).createSync();
+  return runProcessAsync(context, 'wget', arguments: [tarUri], workingDirectory: deployDir).then((_) {
+    _runBashCommandSync(context, 'tar xvf *', cwd: deployDir);
+  });
+}
+
+Future _deploy_latest_image(String deployDir, String chipName, String type,
+                            GrinderContext context) {
   return _getLatestVersion(chipName).then((versionString) {
     if (_deploy_version.isNotEmpty) versionString = _deploy_version;
     return _getTarUrl(chipName, versionString, type).then((epkurl) {
-      new Directory(deployDir).createSync(recursive: true);
-      return runProcessAsync(context, 'wget', arguments: [epkurl], workingDirectory: deployDir).then((_) {
-        _runBashCommandSync(context, 'tar xvf *', cwd: deployDir);
+      return _deploy_tar(deployDir, epkurl, context).then((_) {
         String source = new File('tools/deploy_hybridtv.sh').readAsStringSync();;
         source = source.replaceFirst(new RegExp('{chip}'), chipName)
                        .replaceAll(new RegExp('{type}'), type);
@@ -103,6 +112,28 @@ Future _deploy_latest_image(String deployDir, String chipName, String type, Grin
         new File('tools/brow.sh').copySync('${deployDir}/brow.sh');
       });
     });
+  });
+}
+
+Future _deploy_latest_badland_image(String deployDir, String type, GrinderContext context) {
+  return http.get("${SNAPSHOT_URL}starfish-1.badlands.m14tv-official-m14tv/")
+      .then((response) {
+    dom.Document document = parse(response.body);     
+    List<dom.Element> atags = document.querySelectorAll('a');
+    String version = atags.last.nodes.first.toString().replaceFirst(new RegExp(r'/'),'').replaceAll(new RegExp(r'"'), '');
+    
+  var url = "${SNAPSHOT_URL}starfish-1.badlands.m14tv-official-m14tv/${version}/m14tv/starfish-${type}-nfs/";
+  return http.get(url).then((response) {
+    dom.Document document = parse(response.body);
+    var epkurl = "";
+    document.querySelectorAll('a').forEach((elem){
+      var href = elem.attributes['href']; 
+      if (href.contains(new RegExp('tar.gz')) && !href.contains(new RegExp('md5'))) {
+        epkurl = url + href;
+      }
+    });
+    return _deploy_tar(deployDir, epkurl, context);
+  });
   });
 }
 
@@ -152,4 +183,10 @@ Future set_lm15u_dvb(GrinderContext context) {
 void set_version(GrinderContext context) {
   print('Enter version : ');
   _deploy_version = stdin.readLineSync().trim();
+}
+
+Future set_badland_atsc(GrinderContext context) {
+  final String DEPLOY_DIR = "badland_atsc";
+  deleteEntity(getDir(DEPLOY_DIR), context);
+  return _deploy_latest_badland_image(DEPLOY_DIR, BroadcastType.ATSC.toString(), context);
 }

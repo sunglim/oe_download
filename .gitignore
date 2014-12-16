@@ -7,6 +7,7 @@ h15_atsc/
 h15_dvb/
 lm15u_atsc/
 lm15u_dvb/
+badland_atsc/
 packages/
 pubspec.lock
 lib/packages/
