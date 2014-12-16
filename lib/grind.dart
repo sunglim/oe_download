@@ -75,10 +75,11 @@ Future<String> _getTarUrl(String chipName, String version, String type) {
   });
 }
 
-void _runBashCommandSync(GrinderContext context, String command, {String cwd}) {
+void _runBashCommandSync(GrinderContext context, String command, {String cwd, bool log: true}) {
   context.log(command);
   ProcessResult result =
     Process.runSync('/bin/bash', ['-c', command], workingDirectory: cwd);
+  if (!log) return;
   if (result.stdout.isNotEmpty) {
     context.log(result.stdout);
   }
@@ -94,7 +95,7 @@ void _runBashCommandSync(GrinderContext context, String command, {String cwd}) {
 Future _deploy_tar(String deployDir, String tarUri, GrinderContext context) {
   new Directory(deployDir).createSync();
   return runProcessAsync(context, 'wget', arguments: [tarUri], workingDirectory: deployDir).then((_) {
-    _runBashCommandSync(context, 'tar xvf *', cwd: deployDir);
+    _runBashCommandSync(context, 'tar xvf *', cwd: deployDir, log: false);
   });
 }
 
