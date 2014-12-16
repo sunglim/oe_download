@@ -116,24 +116,34 @@ Future _deploy_latest_image(String deployDir, String chipName, String type,
 }
 
 Future _deploy_latest_badland_image(String deployDir, String type, GrinderContext context) {
-  return http.get("${SNAPSHOT_URL}starfish-1.badlands.m14tv-official-m14tv/")
+  const String BADLAND_URL =
+      "${SNAPSHOT_URL}starfish-1.badlands.m14tv-official-m14tv/";
+  return http.get(BADLAND_URL)
       .then((response) {
     dom.Document document = parse(response.body);     
     List<dom.Element> atags = document.querySelectorAll('a');
-    String version = atags.last.nodes.first.toString().replaceFirst(new RegExp(r'/'),'').replaceAll(new RegExp(r'"'), '');
-    
-  var url = "${SNAPSHOT_URL}starfish-1.badlands.m14tv-official-m14tv/${version}/m14tv/starfish-${type}-nfs/";
-  return http.get(url).then((response) {
-    dom.Document document = parse(response.body);
-    var epkurl = "";
-    document.querySelectorAll('a').forEach((elem){
-      var href = elem.attributes['href']; 
-      if (href.contains(new RegExp('tar.gz')) && !href.contains(new RegExp('md5'))) {
-        epkurl = url + href;
-      }
+    String version = atags.last.nodes.first.toString().
+        replaceFirst(new RegExp(r'/'),'').replaceAll(new RegExp(r'"'), '');
+
+    var url = "${BADLAND_URL}${version}/m14tv/starfish-${type}-nfs/";
+    return http.get(url).then((response) {
+      dom.Document document = parse(response.body);
+      var epkurl = "";
+      document.querySelectorAll('a').forEach((elem){
+        var href = elem.attributes['href']; 
+        if (href.contains(new RegExp('tar.gz')) && !href.contains(new RegExp('md5'))) {
+          epkurl = url + href;
+        }
+      });
+      return _deploy_tar(deployDir, epkurl, context).then((_) {
+        String source = new File('tools/deploy_hybridtv.sh').readAsStringSync();;
+        source = source.replaceFirst(new RegExp('{chip}'), Chips.M14.toString())
+                       .replaceAll(new RegExp('{type}'), type);
+        new File('${deployDir}/ex.sh').writeAsStringSync(source);
+        _runBashCommandSync(context, 'chmod 777 ex.sh', cwd: deployDir);
+        new File('tools/brow.sh').copySync('${deployDir}/brow.sh');
+      });
     });
-    return _deploy_tar(deployDir, epkurl, context);
-  });
   });
 }
 
