@@ -116,7 +116,7 @@ Future _deploy_latest_image(String deployDir, String chipName, String type,
 }
 
 Future _deploy_latest_badland_image(String deployDir, String type, GrinderContext context) {
-  const String BADLAND_URL =
+  final String BADLAND_URL =
       "${SNAPSHOT_URL}starfish-1.badlands.m14tv-official-m14tv/";
   return http.get(BADLAND_URL)
       .then((response) {
